@@ -186,7 +186,7 @@ void dataAnalize() {                      //Set various information for drawing
       dataMax = d;                        // maximum value
     }
   }
-  if (dataMin + 10 > dataMax){            // the value added to dataMin sets the minimum displayable signal: too low and you will see low res insignificant signals, too high and you will likely loose useful infos ...
+  if (dataMin + 10 > dataMax){            // the value added to dataMin avoids to display very low volume signals. The lower the volume, the lower the wave resolution. 
     NOSIGNAL = true;
   }
   else {
