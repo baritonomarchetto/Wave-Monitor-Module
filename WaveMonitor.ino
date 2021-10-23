@@ -7,6 +7,8 @@ Mods to the original sketch:
 - single button action (time base)
 - auto voltage range mode only
 - removed all measurement capabilities and visual informations for faster execution and higher view area
+- reduced horizontal ranges
+- some minor change to face hardware modifications
 
 Software-wise, this was mainly a trimming of an existing code work, so all credits goes 
 to radiopench.
@@ -47,15 +49,16 @@ int dataMin;                   // Minimum buffer value (min: 0)
 int dataMax;                   // Maximum buffer value (max: 1023)
 int trigP;                     // Trigger position on the data buffer
 
-boolean hRangeState;           //h-range button state
-unsigned long hRangeTime;      //h-range button last press (software debounce)
-int debTime = 20;              //ms; Debounce time
+boolean hRangeState;           // h-range button state
+unsigned long hRangeTime;      // h-range button last press (software debounce)
+int debTime = 20;              // ms; Debounce time
+boolean NOSIGNAL;              // no incoming signal
 
 void setup() {
   pinMode(2, INPUT_PULLUP);                // h-range pin
   pinMode(13, OUTPUT);                     // Status display
   hRangeState = digitalRead(hRangePin);    // initialize h-range button status
-  hRange = 0;
+  hRange = 3;
  //     Serial.begin(115200);        // Using this consumes a lot of RAM
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x64
     //       Serial.println(F("SSD1306 failed"));
@@ -171,8 +174,8 @@ void dataAnalize() {                      //Set various information for drawing
   long sum = 0;
 
   // Find the maximum and minimum values
-  dataMin = 1023;                         // minimum
-  dataMax = 0;                            // Initialize maximum record variable
+  dataMin = 1023;                         // Initialize minimum
+  dataMax = 0;                            // Initialize maximum
   for (int i = 0; i < REC_LENGTH; i++) {  // Find the maximum and minimum values
     d = waveBuff[i];
     sum = sum + d;
@@ -183,7 +186,14 @@ void dataAnalize() {                      //Set various information for drawing
       dataMax = d;                        // maximum value
     }
   }
+  if (dataMin > 498 && dataMax < 526){
+    NOSIGNAL = true;
+  }
+  else {
+    NOSIGNAL = false;
+  }
 
+if(NOSIGNAL == false){
   // Find the trigger position
   for (trigP = ((REC_LENGTH / 2) - 51); trigP < ((REC_LENGTH / 2) + 50); trigP++) { // Find the point that straddles the median in the center of the data range
     if (trigD == 0) {                     // If the trigger direction is 0 (positive trigger)
@@ -200,6 +210,7 @@ void dataAnalize() {                      //Set various information for drawing
     trigP = (REC_LENGTH / 2);
   }
 }
+}
 
 void startScreen() {                 // Screen display at start
   display.clearDisplay();
@@ -209,7 +220,7 @@ void startScreen() {                 // Screen display at start
   display.println(F("WAVE MON"));    // welcome message
   display.setCursor(10, 35);         
   display.setTextSize(1);            // Standard font size 
-  display.println(F("v0.1"));
+  display.println(F("v0.1b"));
   display.display();
   delay(1000);
   display.clearDisplay(); 
@@ -217,13 +228,18 @@ void startScreen() {                 // Screen display at start
 
 void plotData() {                    // Plot data based on array values
   long y1, y2;
+if (NOSIGNAL){
+    display.drawLine(0, 32, SCREEN_WIDTH, 32, WHITE);                                 // straight line at screen center
+}
+else{ //signal is present
   for (int x = 0; x <= SCREEN_WIDTH; x++) {
     y1 = map(waveBuff[x + trigP -50], dataMin, dataMax, SCREEN_HEIGHT, 0); // Convert wave buffer values to plot coordinates
-    y1 = constrain(y1, 0, SCREEN_HEIGHT);                                  // Constrain values withing the display area
+    y1 = constrain(y1, 2, SCREEN_HEIGHT-2);                                // Constrain values withing the display area
     y2 = map(waveBuff[x + trigP -51], dataMin, dataMax, SCREEN_HEIGHT, 0); // Very next point, for line connection
-    y2 = constrain(y2, 0, SCREEN_HEIGHT);                                  // Constrain values withing the display area
+    y2 = constrain(y2, 2, SCREEN_HEIGHT-2);                                // Constrain values withing the display area
     display.drawLine(x, y1, x, y2, WHITE);                                 // Connect the two points with a line
   }
+}
 }
 
 void ButtonHandling() {                   // Buttons handling
@@ -232,8 +248,8 @@ if(digitalRead(hRangePin) != hRangeState && millis()- hRangeTime > debTime){
   hRangeTime = millis();
   if(hRangeState == LOW){       // Button pressed (input pullup)
     hRange++;    
-    if (hRange > 7) {
-      hRange = 0;               // Cycle back to zero
+    if (hRange > 4) {           //reduced range
+      hRange = 2;               // Cycle back 
     }
   }
 }
