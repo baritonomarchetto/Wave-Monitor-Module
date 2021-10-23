@@ -186,7 +186,7 @@ void dataAnalize() {                      //Set various information for drawing
       dataMax = d;                        // maximum value
     }
   }
-  if (dataMin > 498 && dataMax < 526){
+  if (dataMin + 10 > dataMax){            // the value added to dataMin sets the minimum displayable signal: too low and you will see low res insignificant signals, too high and you will likely loose useful infos ...
     NOSIGNAL = true;
   }
   else {
@@ -234,9 +234,9 @@ if (NOSIGNAL){
 else{ //signal is present
   for (int x = 0; x <= SCREEN_WIDTH; x++) {
     y1 = map(waveBuff[x + trigP -50], dataMin, dataMax, SCREEN_HEIGHT, 0); // Convert wave buffer values to plot coordinates
-    y1 = constrain(y1, 2, SCREEN_HEIGHT-2);                                // Constrain values withing the display area
+    y1 = constrain(y1, 2, 62);                                             // Constrain values withing the display area
     y2 = map(waveBuff[x + trigP -51], dataMin, dataMax, SCREEN_HEIGHT, 0); // Very next point, for line connection
-    y2 = constrain(y2, 2, SCREEN_HEIGHT-2);                                // Constrain values withing the display area
+    y2 = constrain(y2, 2, 62);                                             // Constrain values withing the display area
     display.drawLine(x, y1, x, y2, WHITE);                                 // Connect the two points with a line
   }
 }
